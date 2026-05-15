@@ -2,11 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SIZES, ATTENDANCE_STATUS } from '../styles/theme';
 
-export default function AttendanceButton({ date, status, onStatusChange, disabled = false }) {
+export default function AttendanceButton({ date, status, onStatusChange, disabled = false, large = false }) {
   const dayOfWeek = new Date(date).toLocaleDateString('en-IN', { weekday: 'short' });
   const dayNumber = new Date(date).getDate();
   const isToday = new Date(date).toDateString() === new Date().toDateString();
   const isFuture = new Date(date) > new Date();
+  const isDisabled = disabled || isFuture;
   
   const statusConfig = {
     [ATTENDANCE_STATUS.PRESENT]: { color: COLORS.present, label: 'P', bgColor: '#D1FAE5' },
@@ -16,7 +17,7 @@ export default function AttendanceButton({ date, status, onStatusChange, disable
   };
 
   const cycleStatus = () => {
-    if (disabled || isFuture) return;
+    if (isDisabled) return;
     
     const statusOrder = [null, ATTENDANCE_STATUS.PRESENT, ATTENDANCE_STATUS.HALF_DAY, ATTENDANCE_STATUS.ABSENT, ATTENDANCE_STATUS.LEAVE];
     const currentIndex = statusOrder.indexOf(status);
@@ -25,6 +26,31 @@ export default function AttendanceButton({ date, status, onStatusChange, disable
   };
 
   const currentConfig = status ? statusConfig[status] : null;
+
+  // For large mode (week view), we only show the status badge
+  if (large) {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.largeContainer,
+          isToday && styles.largeToday,
+          isDisabled && styles.largeFuture,
+          currentConfig && { backgroundColor: currentConfig.bgColor, borderColor: currentConfig.color },
+        ]}
+        onPress={cycleStatus}
+        disabled={isDisabled}
+        activeOpacity={0.7}
+      >
+        {currentConfig ? (
+          <Text style={[styles.largeStatusText, { color: currentConfig.color }]}>
+            {currentConfig.label}
+          </Text>
+        ) : (
+          <Text style={styles.largeEmptyText}>-</Text>
+        )}
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity
@@ -35,10 +61,9 @@ export default function AttendanceButton({ date, status, onStatusChange, disable
         currentConfig && { backgroundColor: currentConfig.bgColor },
       ]}
       onPress={cycleStatus}
-      disabled={disabled || isFuture}
+      disabled={isDisabled}
       activeOpacity={0.7}
     >
-      <Text style={[styles.dayOfWeek, isFuture && styles.futureText]}>{dayOfWeek}</Text>
       <Text style={[styles.dayNumber, isFuture && styles.futureText]}>{dayNumber}</Text>
       {currentConfig ? (
         <View style={[styles.statusBadge, { backgroundColor: currentConfig.color }]}>
@@ -55,14 +80,13 @@ export default function AttendanceButton({ date, status, onStatusChange, disable
 
 const styles = StyleSheet.create({
   container: {
-    width: 48,
-    height: 80,
+    width: 44,
+    height: 70,
     backgroundColor: COLORS.surface,
-    borderRadius: SIZES.radius.md,
+    borderRadius: SIZES.radius.sm,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    marginHorizontal: 4,
+    justifyContent: 'center',
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -74,23 +98,19 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.borderLight,
     opacity: 0.6,
   },
-  dayOfWeek: {
-    fontSize: SIZES.xs,
-    color: COLORS.textSecondary,
-    ...FONTS.medium,
-  },
   dayNumber: {
-    fontSize: SIZES.lg,
+    fontSize: SIZES.base,
     color: COLORS.text,
     ...FONTS.bold,
+    marginBottom: 4,
   },
   futureText: {
     color: COLORS.textLight,
   },
   statusBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -100,9 +120,9 @@ const styles = StyleSheet.create({
     ...FONTS.bold,
   },
   emptyBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.borderLight,
@@ -111,5 +131,33 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     color: COLORS.textLight,
     ...FONTS.regular,
+  },
+  // Large button styles for week view
+  largeContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.border,
+  },
+  largeToday: {
+    borderColor: COLORS.primary,
+    borderWidth: 3,
+  },
+  largeFuture: {
+    backgroundColor: COLORS.borderLight,
+    opacity: 0.5,
+  },
+  largeStatusText: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+  },
+  largeEmptyText: {
+    fontSize: SIZES.lg,
+    color: COLORS.textLight,
+    ...FONTS.medium,
   },
 });

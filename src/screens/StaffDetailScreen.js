@@ -17,6 +17,7 @@ import {
   SIZES,
   SHADOWS,
   WORK_TYPES,
+  DAYS_OF_WEEK,
   formatCurrency,
   formatDate,
   getMonthKey,
@@ -187,6 +188,29 @@ export default function StaffDetailScreen({ navigation, route }) {
           <Text style={styles.joinDate}>
             Joined: {formatDate(staffMember.joiningDate)}
           </Text>
+          
+          {/* Weekly Off Days */}
+          {staffMember.weeklyOffDays && staffMember.weeklyOffDays.length > 0 && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>📅 Weekly Off:</Text>
+              <Text style={styles.infoValue}>
+                {staffMember.weeklyOffDays
+                  .map(d => DAYS_OF_WEEK.find(day => day.id === d)?.label)
+                  .filter(Boolean)
+                  .join(', ')}
+              </Text>
+            </View>
+          )}
+          
+          {/* Paid Leaves */}
+          {staffMember.paidLeavesPerMonth > 0 && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>🌴 Paid Leaves:</Text>
+              <Text style={styles.infoValue}>
+                {staffMember.paidLeavesPerMonth}/month
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Month Picker */}
@@ -202,6 +226,16 @@ export default function StaffDetailScreen({ navigation, route }) {
           <View style={styles.salaryRow}>
             <Text style={styles.salaryLabel}>Monthly Salary</Text>
             <Text style={styles.salaryValue}>{formatCurrency(staffMember.salary)}</Text>
+          </View>
+          
+          <View style={styles.salaryRow}>
+            <Text style={styles.salaryLabel}>Workable Days</Text>
+            <Text style={styles.salaryValue}>
+              {salaryInfo?.workableDays || 0} days
+              {salaryInfo?.weeklyOffCount > 0 && (
+                <Text style={styles.subText}> ({salaryInfo.weeklyOffCount} off)</Text>
+              )}
+            </Text>
           </View>
           
           <View style={styles.salaryRow}>
@@ -233,6 +267,15 @@ export default function StaffDetailScreen({ navigation, route }) {
               <Text style={styles.attendanceLabel}>Leave</Text>
             </View>
           </View>
+          
+          {/* Show paid/unpaid leaves breakdown if applicable */}
+          {staffMember.paidLeavesPerMonth > 0 && salaryInfo?.leaves > 0 && (
+            <View style={styles.leavesBreakdown}>
+              <Text style={styles.breakdownText}>
+                Paid: {salaryInfo?.paidLeaves || 0} | Unpaid: {salaryInfo?.unpaidLeaves || 0}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.divider} />
 
@@ -476,6 +519,22 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 4,
   },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SIZES.spacing.sm,
+  },
+  infoLabel: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.medium,
+  },
+  infoValue: {
+    fontSize: SIZES.sm,
+    color: COLORS.text,
+    marginLeft: 4,
+    ...FONTS.medium,
+  },
   salaryCard: {
     backgroundColor: COLORS.surface,
     marginHorizontal: SIZES.spacing.base,
@@ -505,6 +564,20 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     color: COLORS.text,
     ...FONTS.semiBold,
+  },
+  subText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.regular,
+  },
+  leavesBreakdown: {
+    alignItems: 'center',
+    marginTop: SIZES.spacing.sm,
+  },
+  breakdownText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.medium,
   },
   divider: {
     height: 1,

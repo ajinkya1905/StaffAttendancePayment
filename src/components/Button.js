@@ -5,7 +5,7 @@ import { COLORS, FONTS, SIZES, SHADOWS } from '../styles/theme';
 export default function Button({
   title,
   onPress,
-  variant = 'primary', // primary, secondary, outline, danger
+  variant = 'primary', // primary, secondary, outline, danger, text
   size = 'medium', // small, medium, large
   disabled = false,
   loading = false,
@@ -26,6 +26,9 @@ export default function Button({
       case 'danger':
         baseStyle.push(styles.danger);
         break;
+      case 'text':
+        baseStyle.push(styles.textButton);
+        break;
       default:
         baseStyle.push(styles.primary);
     }
@@ -43,6 +46,9 @@ export default function Button({
     switch (variant) {
       case 'outline':
         baseStyle.push(styles.outlineText);
+        break;
+      case 'text':
+        baseStyle.push(styles.textButtonText);
         break;
       default:
         baseStyle.push(styles.lightText);
@@ -109,6 +115,11 @@ const styles = StyleSheet.create({
   danger: {
     backgroundColor: COLORS.danger,
   },
+  textButton: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
   disabled: {
     opacity: 0.5,
   },
@@ -131,5 +142,8 @@ const styles = StyleSheet.create({
   },
   outlineText: {
     color: COLORS.primary,
+  },
+  textButtonText: {
+    color: COLORS.textSecondary,
   },
 });

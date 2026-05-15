@@ -124,6 +124,17 @@ export const WORK_TYPES = [
   { id: 'other', label: 'Other', icon: '👤' },
 ];
 
+// Days of week for weekly off selection
+export const DAYS_OF_WEEK = [
+  { id: 0, label: 'Sun', fullLabel: 'Sunday' },
+  { id: 1, label: 'Mon', fullLabel: 'Monday' },
+  { id: 2, label: 'Tue', fullLabel: 'Tuesday' },
+  { id: 3, label: 'Wed', fullLabel: 'Wednesday' },
+  { id: 4, label: 'Thu', fullLabel: 'Thursday' },
+  { id: 5, label: 'Fri', fullLabel: 'Friday' },
+  { id: 6, label: 'Sat', fullLabel: 'Saturday' },
+];
+
 // Attendance statuses
 export const ATTENDANCE_STATUS = {
   PRESENT: 'present',
@@ -173,6 +184,7 @@ export default {
   SIZES,
   SHADOWS,
   WORK_TYPES,
+  DAYS_OF_WEEK,
   ATTENDANCE_STATUS,
   ATTENDANCE_LABELS,
   formatCurrency,

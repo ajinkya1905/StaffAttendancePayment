@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStaff } from '../context/StaffContext';
-import { StaffCard, MonthPicker, LoadingScreen, EmptyState } from '../components';
+import { StaffCard, MonthPicker, LoadingScreen, EmptyState, AdBanner } from '../components';
 import { COLORS, FONTS, SIZES, SHADOWS, getMonthKey, formatCurrency } from '../styles/theme';
 
 export default function HomeScreen({ navigation }) {
@@ -148,6 +148,9 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
+      {/* Banner Ad */}
+      <AdBanner style={styles.bannerAd} />
+
       {/* Add Button */}
       <TouchableOpacity
         style={styles.fab}
@@ -231,11 +234,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSpacer: {
-    height: 100,
+    height: 140, // Extra space for banner ad
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 80, // Positioned above the banner ad
     right: 24,
     width: 60,
     height: 60,
@@ -249,5 +252,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: COLORS.white,
     marginTop: -2,
+  },
+  bannerAd: {
+    backgroundColor: COLORS.surface,
   },
 });

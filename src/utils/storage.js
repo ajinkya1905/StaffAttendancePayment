@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   PAYMENTS: '@staffpay_payments',
   ADVANCES: '@staffpay_advances',
   SETTINGS: '@staffpay_settings',
+  CUSTOM_WORK_TYPES: '@staffpay_custom_work_types',
 };
 
 // Staff CRUD operations
@@ -320,7 +321,20 @@ export const calculateSalary = async (staffMember, monthKey) => {
   
   const [year, month] = monthKey.split('-').map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
-  const dailyRate = staffMember.salary / daysInMonth;
+  
+  // Calculate weekly off days in this month
+  const weeklyOffDays = staffMember.weeklyOffDays || [];
+  let weeklyOffCount = 0;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    if (weeklyOffDays.includes(date.getDay())) {
+      weeklyOffCount++;
+    }
+  }
+  
+  // Working days = total days - weekly offs
+  const workableDays = daysInMonth - weeklyOffCount;
+  const dailyRate = workableDays > 0 ? staffMember.salary / workableDays : 0;
   
   let presentDays = 0;
   let absentDays = 0;
@@ -344,18 +358,28 @@ export const calculateSalary = async (staffMember, monthKey) => {
     }
   });
   
-  const workingDays = presentDays + (halfDays * 0.5);
-  const earnedSalary = Math.round(dailyRate * workingDays);
+  // Calculate paid leaves (up to the monthly allowance)
+  const paidLeavesAllowed = staffMember.paidLeavesPerMonth || 0;
+  const paidLeaves = Math.min(leaves, paidLeavesAllowed);
+  const unpaidLeaves = leaves - paidLeaves;
+  
+  // Working days = present days + half days (0.5) + paid leaves
+  const effectiveWorkDays = presentDays + (halfDays * 0.5) + paidLeaves;
+  const earnedSalary = Math.round(dailyRate * effectiveWorkDays);
   const totalAdvances = advances.reduce((sum, adv) => sum + (adv.amount || 0), 0);
   const netPayable = earnedSalary - totalAdvances;
   
   return {
     daysInMonth,
+    workableDays,
+    weeklyOffCount,
     presentDays,
     absentDays,
     halfDays,
     leaves,
-    unmarkedDays: daysInMonth - presentDays - absentDays - halfDays - leaves,
+    paidLeaves,
+    unpaidLeaves,
+    unmarkedDays: workableDays - presentDays - absentDays - halfDays - leaves,
     dailyRate: Math.round(dailyRate),
     earnedSalary,
     totalAdvances,
@@ -375,6 +399,48 @@ export const clearAllData = async () => {
     return true;
   } catch (error) {
     console.error('Error clearing data:', error);
+    return false;
+  }
+};
+
+// Custom work types operations
+export const getCustomWorkTypes = async () => {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_WORK_TYPES);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting custom work types:', error);
+    return [];
+  }
+};
+
+export const addCustomWorkType = async (label) => {
+  try {
+    const customTypes = await getCustomWorkTypes();
+    const id = `custom_${Date.now()}`;
+    const newType = {
+      id,
+      label: label.trim(),
+      icon: '👤',
+      isCustom: true,
+    };
+    customTypes.push(newType);
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_WORK_TYPES, JSON.stringify(customTypes));
+    return newType;
+  } catch (error) {
+    console.error('Error adding custom work type:', error);
+    return null;
+  }
+};
+
+export const deleteCustomWorkType = async (id) => {
+  try {
+    const customTypes = await getCustomWorkTypes();
+    const filtered = customTypes.filter(t => t.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_WORK_TYPES, JSON.stringify(filtered));
+    return true;
+  } catch (error) {
+    console.error('Error deleting custom work type:', error);
     return false;
   }
 };

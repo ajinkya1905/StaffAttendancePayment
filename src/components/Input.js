@@ -12,6 +12,7 @@ export default function Input({
   numberOfLines = 1,
   secureTextEntry = false,
   error = null,
+  helperText = null,
   leftIcon = null,
   rightIcon = null,
   editable = true,
@@ -52,6 +53,7 @@ export default function Input({
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
       
+      {helperText && !error && <Text style={styles.helperText}>{helperText}</Text>}
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -108,6 +110,12 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: SIZES.sm,
     color: COLORS.danger,
+    marginTop: SIZES.spacing.xs,
+    ...FONTS.regular,
+  },
+  helperText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
     marginTop: SIZES.spacing.xs,
     ...FONTS.regular,
   },

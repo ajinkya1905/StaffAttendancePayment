@@ -6,3 +6,4 @@ export { default as Modal } from './Modal';
 export { default as MonthPicker } from './MonthPicker';
 export { default as LoadingScreen } from './LoadingScreen';
 export { default as EmptyState } from './EmptyState';
+export { default as AdBanner } from './AdBanner';
