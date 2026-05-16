@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SIZES, ATTENDANCE_STATUS } from '../styles/theme';
 
-export default function AttendanceButton({ date, status, onStatusChange, disabled = false, large = false }) {
+export default function AttendanceButton({ date, status, onStatusChange, disabled = false, large = false, compact = false }) {
   const dayOfWeek = new Date(date).toLocaleDateString('en-IN', { weekday: 'short' });
   const dayNumber = new Date(date).getDate();
   const isToday = new Date(date).toDateString() === new Date().toDateString();
@@ -26,6 +26,34 @@ export default function AttendanceButton({ date, status, onStatusChange, disable
   };
 
   const currentConfig = status ? statusConfig[status] : null;
+
+  // Compact mode for half-day weekly off in calendar view
+  if (compact) {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.compactContainer,
+          isToday && styles.compactToday,
+          isDisabled && styles.future,
+          currentConfig && { backgroundColor: currentConfig.bgColor, borderColor: currentConfig.color },
+        ]}
+        onPress={cycleStatus}
+        disabled={isDisabled}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.compactDayNumber, isDisabled && styles.futureText]}>{dayNumber}</Text>
+        {currentConfig ? (
+          <View style={[styles.compactStatusBadge, { backgroundColor: currentConfig.color }]}>
+            <Text style={styles.compactStatusText}>{currentConfig.label}</Text>
+          </View>
+        ) : (
+          <View style={styles.compactEmptyBadge}>
+            <Text style={styles.compactEmptyText}>-</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  }
 
   // For large mode (week view), we only show the status badge
   if (large) {
@@ -159,5 +187,52 @@ const styles = StyleSheet.create({
     fontSize: SIZES.lg,
     color: COLORS.textLight,
     ...FONTS.medium,
+  },
+  // Compact styles for half-day weekly off
+  compactContainer: {
+    width: 40,
+    height: 56,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  compactToday: {
+    borderColor: COLORS.primary,
+    borderWidth: 2,
+  },
+  compactDayNumber: {
+    fontSize: SIZES.sm,
+    color: COLORS.text,
+    ...FONTS.bold,
+    marginBottom: 2,
+  },
+  compactStatusBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compactStatusText: {
+    fontSize: SIZES.xs,
+    color: COLORS.white,
+    ...FONTS.bold,
+  },
+  compactEmptyBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.borderLight,
+  },
+  compactEmptyText: {
+    fontSize: SIZES.xs,
+    color: COLORS.textLight,
+    ...FONTS.regular,
   },
 });

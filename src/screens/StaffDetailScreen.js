@@ -375,7 +375,7 @@ export default function StaffDetailScreen({ navigation, route }) {
         <View style={styles.bottomButtons}>
           <Button
             title="Edit Staff"
-            variant="outline"
+            variant="secondary"
             onPress={() => navigation.navigate('AddStaff', { staff: staffMember })}
             style={styles.editButton}
           />

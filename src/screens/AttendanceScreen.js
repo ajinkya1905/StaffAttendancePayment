@@ -147,9 +147,20 @@ export default function AttendanceScreen({ route }) {
     return currentWeekStart.getTime() === thisWeekStart.getTime();
   };
 
+  // Returns 'full', 'half', or 'none' for the weekly off type
+  const getWeeklyOffType = (date) => {
+    const weeklyOffs = staffMember?.weeklyOffs || [];
+    const dayOff = weeklyOffs.find(off => off.dayId === date.getDay());
+    if (!dayOff) return 'none';
+    return dayOff.type; // 'full' or 'half'
+  };
+
   const isWeeklyOffDay = (date) => {
-    const weeklyOffDays = staffMember?.weeklyOffDays || [];
-    return weeklyOffDays.includes(date.getDay());
+    return getWeeklyOffType(date) === 'full';
+  };
+
+  const isHalfDayWeeklyOff = (date) => {
+    return getWeeklyOffType(date) === 'half';
   };
 
   // Check if a date has an advance payment
@@ -205,17 +216,47 @@ export default function AttendanceScreen({ route }) {
     let leave = 0;
     let unmarked = 0;
     let weeklyOff = 0;
+    let halfDayOff = 0;
 
     const today = new Date();
-    const weeklyOffDays = staffMember?.weeklyOffDays || [];
+    const weeklyOffs = staffMember?.weeklyOffs || [];
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dateKey = date.toISOString().split('T')[0];
+      const dayOff = weeklyOffs.find(off => off.dayId === date.getDay());
       
-      // Check if it's a weekly off day
-      if (weeklyOffDays.includes(date.getDay())) {
+      // Check if it's a full weekly off day
+      if (dayOff?.type === 'full') {
         weeklyOff++;
+        continue;
+      }
+      
+      // Check if it's a half-day weekly off
+      if (dayOff?.type === 'half') {
+        halfDayOff++;
+        // Still need to track attendance for the working half
+        if (date <= today) {
+          const record = attendance[dateKey];
+          if (!record) {
+            unmarked++;
+          } else {
+            switch (record.status) {
+              case ATTENDANCE_STATUS.PRESENT:
+                present++;
+                break;
+              case ATTENDANCE_STATUS.ABSENT:
+                absent++;
+                break;
+              case ATTENDANCE_STATUS.HALF_DAY:
+                halfDay++;
+                break;
+              case ATTENDANCE_STATUS.LEAVE:
+                leave++;
+                break;
+            }
+          }
+        }
         continue;
       }
       
@@ -242,7 +283,7 @@ export default function AttendanceScreen({ route }) {
       }
     }
 
-    return { present, absent, halfDay, leave, unmarked, weeklyOff };
+    return { present, absent, halfDay, leave, unmarked, weeklyOff, halfDayOff };
   };
 
   const renderWeekView = () => {
@@ -256,6 +297,7 @@ export default function AttendanceScreen({ route }) {
           const dateKey = date.toISOString().split('T')[0];
           const record = attendance[dateKey];
           const isOff = isWeeklyOffDay(date);
+          const isHalfOff = isHalfDayWeeklyOff(date);
           const isToday = date.toDateString() === today.toDateString();
           const isFuture = date > today;
           const dayInfo = DAYS_OF_WEEK[date.getDay()];
@@ -265,6 +307,7 @@ export default function AttendanceScreen({ route }) {
               <Text style={[
                 styles.weekDayName,
                 isOff && styles.weekDayOff,
+                isHalfOff && styles.weekDayHalfOff,
                 isToday && styles.weekDayToday,
               ]}>
                 {dayInfo.label}
@@ -272,6 +315,7 @@ export default function AttendanceScreen({ route }) {
               <Text style={[
                 styles.weekDayDate,
                 isOff && styles.weekDayOff,
+                isHalfOff && styles.weekDayHalfOff,
                 isToday && styles.weekDayToday,
               ]}>
                 {date.getDate()}
@@ -279,6 +323,17 @@ export default function AttendanceScreen({ route }) {
               {isOff ? (
                 <View style={styles.weekOffBadge}>
                   <Text style={styles.weekOffText}>OFF</Text>
+                </View>
+              ) : isHalfOff ? (
+                <View style={styles.halfOffContainer}>
+                  <Text style={styles.halfOffLabel}>½ OFF</Text>
+                  <AttendanceButton
+                    date={date}
+                    status={record?.status || null}
+                    onStatusChange={(status) => handleStatusChange(date, status)}
+                    large={true}
+                    disabled={isFuture}
+                  />
                 </View>
               ) : (
                 <AttendanceButton
@@ -320,6 +375,7 @@ export default function AttendanceScreen({ route }) {
       const dateKey = date.toISOString().split('T')[0];
       const record = attendance[dateKey];
       const isOff = isWeeklyOffDay(date);
+      const isHalfOff = isHalfDayWeeklyOff(date);
       const isFuture = date > today;
       const advance = getAdvanceForDate(dateKey);
       const payment = getPaymentForDate(dateKey);
@@ -335,6 +391,28 @@ export default function AttendanceScreen({ route }) {
             </View>
             {advance && <View style={styles.advanceDot} />}
             {payment && <View style={styles.paymentDot} />}
+          </View>
+        );
+      } else if (isHalfOff) {
+        currentWeek.push(
+          <View key={day} style={styles.calendarCell}>
+            <View style={[styles.halfDayOffCell, isDueDate && styles.salaryDueBorder]}>
+              <Text style={styles.halfDayOffLabel}>½</Text>
+              <AttendanceButton
+                date={date}
+                status={record?.status || null}
+                onStatusChange={(status) => handleStatusChange(date, status)}
+                disabled={isFuture}
+                compact={true}
+              />
+            </View>
+            {(advance || payment || isDueDate) && (
+              <View style={styles.dayMarkers}>
+                {isDueDate && <View style={styles.dueDateMarker} />}
+                {advance && <View style={styles.advanceMarker} />}
+                {payment && <View style={styles.paymentMarker} />}
+              </View>
+            )}
           </View>
         );
       } else {
@@ -704,6 +782,25 @@ const styles = StyleSheet.create({
     ...FONTS.semiBold,
     marginTop: 2,
   },
+  halfDayOffCell: {
+    width: 44,
+    height: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  halfDayOffLabel: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    fontSize: 10,
+    color: COLORS.warning,
+    ...FONTS.bold,
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 2,
+    borderRadius: 4,
+    zIndex: 1,
+  },
   statusLegend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -940,5 +1037,17 @@ const styles = StyleSheet.create({
     fontSize: SIZES.xs,
     color: COLORS.textLight,
     ...FONTS.semiBold,
+  },
+  weekDayHalfOff: {
+    color: COLORS.warning,
+  },
+  halfOffContainer: {
+    alignItems: 'center',
+  },
+  halfOffLabel: {
+    fontSize: 10,
+    color: COLORS.warning,
+    ...FONTS.bold,
+    marginBottom: 2,
   },
 });

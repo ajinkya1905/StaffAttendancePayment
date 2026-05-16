@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SIZES.spacing.base,
-    paddingTop: SIZES.spacing.xl,
+    paddingTop: 48,
     paddingBottom: SIZES.spacing.md,
   },
   greeting: {
