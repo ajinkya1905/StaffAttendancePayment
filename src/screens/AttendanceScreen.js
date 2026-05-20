@@ -193,9 +193,16 @@ export default function AttendanceScreen({ route }) {
   const handleBulkMark = async (status) => {
     const today = new Date();
     const promises = [];
+    const weeklyOffs = staffMember?.weeklyOffs || [];
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
+      // Skip full weekly off days
+      const dayOff = weeklyOffs.find(off => off.dayId === date.getDay());
+      if (dayOff?.type === 'full') {
+        continue;
+      }
+      
       if (date <= today) {
         const dateKey = date.toISOString().split('T')[0];
         if (!attendance[dateKey]) {

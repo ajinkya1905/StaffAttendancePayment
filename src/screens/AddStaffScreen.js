@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useStaff } from '../context/StaffContext';
 import { Button, Input, Modal } from '../components';
 import { COLORS, FONTS, SIZES, SHADOWS, WORK_TYPES, DAYS_OF_WEEK, formatDate } from '../styles/theme';
@@ -25,10 +26,13 @@ export default function AddStaffScreen({ navigation, route }) {
 
   const [name, setName] = useState(editStaff?.name || '');
   const [phone, setPhone] = useState(editStaff?.phone || '');
+  const [countryCode, setCountryCode] = useState(editStaff?.countryCode || '+91');
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [workType, setWorkType] = useState(editStaff?.workType || 'maid');
   const [customWorkTypeName, setCustomWorkTypeName] = useState(editStaff?.customWorkTypeName || '');
   const [salary, setSalary] = useState(editStaff?.salary?.toString() || '');
   const [joiningDate, setJoiningDate] = useState(editStaff?.joiningDate || new Date().toISOString().split('T')[0]);
+  const [showJoiningDatePicker, setShowJoiningDatePicker] = useState(false);
   const [photo, setPhoto] = useState(editStaff?.photo || null);
   const [notes, setNotes] = useState(editStaff?.notes || '');
   // Weekly offs - now stores objects with {dayId, type: 'full' | 'half'}
@@ -197,6 +201,7 @@ export default function AddStaffScreen({ navigation, route }) {
       const staffData = {
         name: name.trim(),
         phone: phone.trim(),
+        countryCode,
         workType,
         customWorkTypeName: customWorkTypeName || '',
         salary: Number(salary),
@@ -269,14 +274,61 @@ export default function AddStaffScreen({ navigation, route }) {
             error={errors.name}
           />
 
-          <Input
-            label="Phone Number"
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="10-digit mobile number"
-            keyboardType="phone-pad"
-            error={errors.phone}
-          />
+          <Text style={styles.label}>Phone Number</Text>
+          <View style={styles.phoneRow}>
+            <TouchableOpacity
+              style={styles.countryCodeButton}
+              onPress={() => setShowCountryPicker(!showCountryPicker)}
+            >
+              <Text style={styles.countryCodeText}>{countryCode}</Text>
+              <Text style={styles.dropdownArrow}>▼</Text>
+            </TouchableOpacity>
+            <View style={styles.phoneInputContainer}>
+              <Input
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="10-digit mobile number"
+                keyboardType="phone-pad"
+                error={errors.phone}
+                style={styles.phoneInput}
+              />
+            </View>
+          </View>
+          {showCountryPicker && (
+            <View style={styles.countryPickerContainer}>
+              {[
+                { code: '+91', country: '🇮🇳 India' },
+                { code: '+1', country: '🇺🇸 USA' },
+                { code: '+44', country: '🇬🇧 UK' },
+                { code: '+61', country: '🇦🇺 Australia' },
+                { code: '+971', country: '🇦🇪 UAE' },
+                { code: '+65', country: '🇸🇬 Singapore' },
+                { code: '+60', country: '🇲🇾 Malaysia' },
+                { code: '+977', country: '🇳🇵 Nepal' },
+                { code: '+880', country: '🇧🇩 Bangladesh' },
+                { code: '+94', country: '🇱🇰 Sri Lanka' },
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.code}
+                  style={[
+                    styles.countryOption,
+                    countryCode === item.code && styles.countryOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setCountryCode(item.code);
+                    setShowCountryPicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.countryOptionText,
+                    countryCode === item.code && styles.countryOptionTextSelected,
+                  ]}>
+                    {item.country} ({item.code})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           <Text style={styles.label}>Work Type *</Text>
           <View style={styles.workTypeGrid}>
@@ -451,12 +503,28 @@ export default function AddStaffScreen({ navigation, route }) {
             helperText="Leaves that count toward salary"
           />
 
-          <Input
-            label="Joining Date"
-            value={formatDate(joiningDate)}
-            editable={false}
-            placeholder="Select joining date"
-          />
+          <Text style={styles.label}>Joining Date</Text>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => setShowJoiningDatePicker(true)}
+          >
+            <Text style={styles.datePickerText}>{formatDate(joiningDate)}</Text>
+            <Text style={styles.datePickerIcon}>📅</Text>
+          </TouchableOpacity>
+          {showJoiningDatePicker && (
+            <DateTimePicker
+              value={new Date(joiningDate)}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              maximumDate={new Date()}
+              onChange={(event, selectedDate) => {
+                setShowJoiningDatePicker(Platform.OS === 'ios');
+                if (selectedDate) {
+                  setJoiningDate(selectedDate.toISOString().split('T')[0]);
+                }
+              }}
+            />
+          )}
 
           <Input
             label="Notes"
@@ -756,5 +824,86 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: SIZES.spacing.md,
+  },
+  // Phone with country code styles
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: SIZES.spacing.md,
+  },
+  countryCodeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    minWidth: 80,
+  },
+  countryCodeText: {
+    fontSize: SIZES.md,
+    color: COLORS.text,
+    ...FONTS.medium,
+  },
+  dropdownArrow: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    marginLeft: 6,
+  },
+  phoneInputContainer: {
+    flex: 1,
+  },
+  phoneInput: {
+    marginBottom: 0,
+  },
+  countryPickerContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SIZES.spacing.md,
+    ...SHADOWS.small,
+  },
+  countryOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  countryOptionSelected: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  countryOptionText: {
+    fontSize: SIZES.md,
+    color: COLORS.text,
+    ...FONTS.regular,
+  },
+  countryOptionTextSelected: {
+    color: COLORS.primary,
+    ...FONTS.semiBold,
+  },
+  // Date picker styles
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SIZES.spacing.md,
+  },
+  datePickerText: {
+    fontSize: SIZES.md,
+    color: COLORS.text,
+    ...FONTS.regular,
+  },
+  datePickerIcon: {
+    fontSize: 20,
   },
 });
