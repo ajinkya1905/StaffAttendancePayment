@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStaff } from '../context/StaffContext';
-import { LoadingScreen, EmptyState } from '../components';
+import { LoadingScreen, EmptyState, AdBanner } from '../components';
 import { COLORS, FONTS, SIZES, SHADOWS, formatCurrency, formatDate } from '../styles/theme';
 
 export default function PaymentsScreen({ route }) {
@@ -162,6 +162,9 @@ export default function PaymentsScreen({ route }) {
         )}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Banner Ad */}
+      <AdBanner style={styles.bannerAd} />
     </View>
   );
 }
@@ -303,6 +306,12 @@ const styles = StyleSheet.create({
     ...FONTS.bold,
   },
   bottomSpacer: {
-    height: 20,
+    height: 100,
+  },
+  bannerAd: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });

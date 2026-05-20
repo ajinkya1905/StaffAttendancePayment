@@ -7,10 +7,13 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStaff } from '../context/StaffContext';
-import { Button, MonthPicker, Modal, Input, LoadingScreen } from '../components';
+import { useAds } from '../context/AdContext';
+import { Button, MonthPicker, Modal, Input, LoadingScreen, AdBanner } from '../components';
 import {
   COLORS,
   FONTS,
@@ -26,6 +29,7 @@ import {
 
 export default function StaffDetailScreen({ navigation, route }) {
   const { staffId } = route.params;
+  const { showInterstitial } = useAds();
   const {
     staff,
     selectedMonth,
@@ -48,6 +52,10 @@ export default function StaffDetailScreen({ navigation, route }) {
   const [advanceNote, setAdvanceNote] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
+  const [advanceDate, setAdvanceDate] = useState(new Date());
+  const [paymentDate, setPaymentDate] = useState(new Date());
+  const [showAdvanceDatePicker, setShowAdvanceDatePicker] = useState(false);
+  const [showPaymentDatePicker, setShowPaymentDatePicker] = useState(false);
 
   const staffMember = staff.find(s => s.id === staffId);
   const workType = staffMember ? WORK_TYPES.find(w => w.id === staffMember.workType) : null;
@@ -88,8 +96,8 @@ export default function StaffDetailScreen({ navigation, route }) {
     const advance = {
       amount: Number(advanceAmount),
       note: advanceNote.trim(),
-      date: new Date().toISOString(),
-      monthKey,
+      date: advanceDate.toISOString(),
+      monthKey: getMonthKey(advanceDate),
     };
 
     const result = await addAdvance(staffMember.id, advance);
@@ -97,6 +105,7 @@ export default function StaffDetailScreen({ navigation, route }) {
       setShowAdvanceModal(false);
       setAdvanceAmount('');
       setAdvanceNote('');
+      setAdvanceDate(new Date());
       loadData();
     } else {
       Alert.alert('Error', 'Failed to add advance. Please try again.');
@@ -112,8 +121,8 @@ export default function StaffDetailScreen({ navigation, route }) {
     const payment = {
       amount: Number(paymentAmount),
       note: paymentNote.trim(),
-      date: new Date().toISOString(),
-      monthKey,
+      date: paymentDate.toISOString(),
+      monthKey: getMonthKey(paymentDate),
       salaryInfo: { ...salaryInfo },
     };
 
@@ -122,7 +131,9 @@ export default function StaffDetailScreen({ navigation, route }) {
       setShowPaymentModal(false);
       setPaymentAmount('');
       setPaymentNote('');
+      setPaymentDate(new Date());
       loadData();
+      showInterstitial();
       Alert.alert('Success', 'Payment recorded successfully!');
     } else {
       Alert.alert('Error', 'Failed to record payment. Please try again.');
@@ -390,6 +401,9 @@ export default function StaffDetailScreen({ navigation, route }) {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
+      {/* Banner Ad */}
+      <AdBanner style={styles.bannerAd} />
+
       {/* Add Advance Modal */}
       <Modal
         visible={showAdvanceModal}
@@ -404,6 +418,25 @@ export default function StaffDetailScreen({ navigation, route }) {
           keyboardType="numeric"
           prefix="₹"
         />
+        <TouchableOpacity 
+          style={styles.datePickerButton}
+          onPress={() => setShowAdvanceDatePicker(true)}
+        >
+          <Text style={styles.datePickerLabel}>Date</Text>
+          <Text style={styles.datePickerValue}>{formatDate(advanceDate.toISOString())}</Text>
+        </TouchableOpacity>
+        {showAdvanceDatePicker && (
+          <DateTimePicker
+            value={advanceDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, selectedDate) => {
+              setShowAdvanceDatePicker(Platform.OS === 'ios');
+              if (selectedDate) setAdvanceDate(selectedDate);
+            }}
+            maximumDate={new Date()}
+          />
+        )}
         <Input
           label="Note (Optional)"
           value={advanceNote}
@@ -434,6 +467,25 @@ export default function StaffDetailScreen({ navigation, route }) {
           keyboardType="numeric"
           prefix="₹"
         />
+        <TouchableOpacity 
+          style={styles.datePickerButton}
+          onPress={() => setShowPaymentDatePicker(true)}
+        >
+          <Text style={styles.datePickerLabel}>Date</Text>
+          <Text style={styles.datePickerValue}>{formatDate(paymentDate.toISOString())}</Text>
+        </TouchableOpacity>
+        {showPaymentDatePicker && (
+          <DateTimePicker
+            value={paymentDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, selectedDate) => {
+              setShowPaymentDatePicker(Platform.OS === 'ios');
+              if (selectedDate) setPaymentDate(selectedDate);
+            }}
+            maximumDate={new Date()}
+          />
+        )}
         <Input
           label="Note (Optional)"
           value={paymentNote}
@@ -699,7 +751,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSpacer: {
-    height: 40,
+    height: 100,
+  },
+  bannerAd: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   modalInfo: {
     fontSize: SIZES.md,
@@ -709,5 +767,22 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     marginTop: SIZES.spacing.base,
+  },
+  datePickerButton: {
+    backgroundColor: COLORS.background,
+    borderRadius: SIZES.radius.md,
+    padding: SIZES.spacing.base,
+    marginBottom: SIZES.spacing.base,
+  },
+  datePickerLabel: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+    ...FONTS.medium,
+  },
+  datePickerValue: {
+    fontSize: SIZES.md,
+    color: COLORS.text,
+    ...FONTS.medium,
   },
 });

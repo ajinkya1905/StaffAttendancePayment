@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStaff } from '../context/StaffContext';
-import { MonthPicker, AttendanceButton, LoadingScreen } from '../components';
+import { MonthPicker, AttendanceButton, LoadingScreen, AdBanner } from '../components';
 import {
   COLORS,
   FONTS,
@@ -165,12 +165,12 @@ export default function AttendanceScreen({ route }) {
 
   // Check if a date has an advance payment
   const getAdvanceForDate = (dateKey) => {
-    return advances.find(adv => adv.date === dateKey);
+    return advances.find(adv => adv.date && adv.date.startsWith(dateKey));
   };
 
   // Check if a date has a salary payment
   const getPaymentForDate = (dateKey) => {
-    return payments.find(p => p.date === dateKey);
+    return payments.find(p => p.date && p.date.startsWith(dateKey));
   };
 
   // Check if date is salary due date
@@ -644,6 +644,9 @@ export default function AttendanceScreen({ route }) {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Banner Ad */}
+      <AdBanner style={styles.bannerAd} />
     </View>
   );
 }
@@ -920,7 +923,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.success,
   },
   bottomSpacer: {
-    height: 40,
+    height: 100,
+  },
+  bannerAd: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   // View Toggle Styles
   viewToggle: {

@@ -26,7 +26,7 @@ const PROD_INTERSTITIAL_ANDROID = 'ca-app-pub-9985947780680080/5737905813';
 const PROD_INTERSTITIAL_IOS = 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
 
 // Set to false for production release
-const USE_TEST_ADS = __DEV__;
+const USE_TEST_ADS = false;
 
 export const AD_UNIT_IDS = {
   BANNER: Platform.select({
